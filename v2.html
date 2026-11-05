@@ -1,0 +1,463 @@
+
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NAIL MATCH v2</title>
+<style>
+:root{
+  --ink:#332b32;
+  --rose:#b76e91;
+  --pale:#fff4f8;
+  --line:#f1e2e9;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#fcf9fa;
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,
+  'Hiragino Kaku Gothic ProN',sans-serif;
+}
+header{
+  text-align:center;
+  padding:30px 12px 20px;
+  background:white;
+}
+h1{
+  font-family:Georgia,serif;
+  letter-spacing:.18em;
+  font-size:30px;
+  margin:0;
+}
+header p{
+  font-size:11px;
+  letter-spacing:.24em;
+  color:#a88798;
+}
+nav{
+  display:flex;
+  background:white;
+  position:sticky;
+  top:0;
+  z-index:2;
+  border-bottom:1px solid var(--line);
+}
+nav button{
+  flex:1;
+  background:white;
+  border:0;
+  padding:16px 3px;
+  color:#8a7c85;
+  font-size:12px;
+}
+nav button.active{
+  color:var(--rose);
+  border-bottom:3px solid var(--rose);
+  font-weight:bold;
+}
+main{
+  max-width:720px;
+  margin:auto;
+  padding:20px 14px 80px;
+}
+.panel{
+  background:white;
+  padding:22px;
+  border-radius:22px;
+  margin-bottom:18px;
+  box-shadow:0 5px 24px #50304808;
+}
+h2{font-size:21px;margin:0 0 12px}
+p{line-height:1.7}
+input,select{
+  width:100%;
+  border:1px solid #e7d9e0;
+  border-radius:12px;
+  background:white;
+  padding:13px;
+  margin:6px 0;
+  font-size:15px;
+}
+button{cursor:pointer}
+.primary{
+  border:0;
+  background:var(--rose);
+  color:white;
+  padding:13px 20px;
+  border-radius:12px;
+  font-weight:bold;
+  margin-top:8px;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.tile{
+  background:white;
+  border-radius:18px;
+  padding:12px;
+  box-shadow:0 4px 20px #5030480a;
+}
+.swatch{
+  height:125px;
+  border-radius:14px;
+  border:1px solid #00000009;
+}
+.tile h3{font-size:15px;margin:12px 0 5px}
+.meta{color:#988a93;font-size:12px}
+.tag{
+  display:inline-block;
+  background:#f8e9f0;
+  color:#9e5c7d;
+  padding:5px 9px;
+  border-radius:30px;
+  font-size:12px;
+  margin:9px 0;
+}
+.save{
+  width:100%;
+  border:1px solid #e9cbd9;
+  background:white;
+  color:var(--rose);
+  padding:10px;
+  border-radius:10px;
+}
+.save.saved{background:#f8e9f0}
+.hidden{display:none}
+.row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 0;
+  border-bottom:1px solid #f4eaf0;
+}
+.row input{
+  width:20px;
+  height:20px;
+  accent-color:var(--rose);
+}
+.row span{flex:1;font-size:14px}
+.empty{
+  color:#988a93;
+  text-align:center;
+  padding:30px;
+}
+.note{font-size:12px;color:#9b8994}
+footer{
+  text-align:center;
+  color:#b7a8b0;
+  font-size:11px;
+  padding:20px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>NAIL MATCH ✦</h1>
+  <p>YOUR COLOR, YOUR MOOD.</p>
+</header>
+
+<nav>
+  <button class="active" data-tab="colors">カラー</button>
+  <button data-tab="mood">ムード診断</button>
+  <button data-tab="favorites">お気に入り</button>
+  <button data-tab="admin">サロン管理</button>
+</nav>
+
+<main>
+<section id="colors">
+  <div class="panel">
+    <h2>Find your color ♡</h2>
+    <p>サロンで使えるカラーから、今日のお気に入りを。</p>
+    <input id="search" placeholder="メーカー・品番・カラー名で検索">
+    <select id="brand">
+      <option value="">すべてのメーカー</option>
+    </select>
+  </div>
+  <div class="grid" id="colorGrid"></div>
+</section>
+
+<section id="mood" class="hidden">
+  <div class="panel">
+    <h2>MOOD MATCH ✧</h2>
+    <p>今日の気分に合わせてカラーを提案。</p>
+    <select id="moodSelect">
+      <option value="office">上品・オフィス</option>
+      <option value="natural">かわいい・ナチュラル</option>
+      <option value="sparkle">華やか・キラキラ</option>
+      <option value="cool">クール・モード</option>
+    </select>
+    <button class="primary" id="recommend">おすすめを見る ✦</button>
+  </div>
+  <div class="grid" id="moodGrid"></div>
+</section>
+
+<section id="favorites" class="hidden">
+  <div class="panel">
+    <h2>MY COLORS ♡</h2>
+    <p>保存したカラーをいつでもチェック。</p>
+  </div>
+  <div class="grid" id="favGrid"></div>
+</section>
+
+<section id="admin" class="hidden">
+  <div class="panel">
+    <h2>サロン管理</h2>
+    <p>チェックしたジェルだけがお客様画面に表示されます。</p>
+    <div id="stockList"></div>
+  </div>
+
+  <div class="panel">
+    <h2>新しいジェルを追加</h2>
+    <input id="newBrand" placeholder="メーカー名（例：Ricca）">
+    <input id="newCode" placeholder="品番（例：R10）">
+    <input id="newName" placeholder="カラー名">
+
+    <select id="newType">
+      <option value="ワンカラー">ワンカラー</option>
+      <option value="マグネット">マグネット</option>
+      <option value="フラッシュ">フラッシュ</option>
+      <option value="ラメ">ラメ</option>
+    </select>
+
+    <label class="note">カラーの近似色を選択</label>
+    <input id="newHex" type="color" value="#d9a6bb"
+      style="height:54px;padding:5px">
+
+    <select id="newMood">
+      <option value="natural">かわいい・ナチュラル</option>
+      <option value="office">上品・オフィス</option>
+      <option value="sparkle">華やか・キラキラ</option>
+      <option value="cool">クール・モード</option>
+    </select>
+
+    <button class="primary" id="add">ジェルを登録する ＋</button>
+    <p class="note">
+      ※この端末・ブラウザ内に仮保存します。
+      他の端末とは同期されません。
+    </p>
+  </div>
+
+  <button id="reset" class="save">サンプルデータに戻す</button>
+</section>
+
+<footer>NAIL MATCH v2 · DEMO</footer>
+</main>
+
+<script>
+const samples = [
+  ['Ricca','R01','ローズベージュ','ワンカラー','#bc9294','office'],
+  ['Ricca','R02','ミルクピンク','ワンカラー','#e4c3cd','natural'],
+  ['PREGEL','P01','モーヴグレージュ','ワンカラー','#a393a2','office'],
+  ['PREGEL','P02','シアーラベンダー','ワンカラー','#c6b5d5','natural'],
+  ['my&bee','M01','シャンパンマグ','マグネット','#c6af98','sparkle'],
+  ['my&bee','M02','ピンクマグ','マグネット','#bd94a5','sparkle'],
+  ['emena','E01','フラッシュローズ','フラッシュ','#af748b','sparkle'],
+  ['emena','E02','ボルドーマグ','マグネット','#714154','cool']
+];
+
+const base = samples.map((s,i)=>({
+  id:'sample-'+i,
+  brand:s[0],
+  code:s[1],
+  name:s[2],
+  type:s[3],
+  hex:s[4],
+  mood:s[5],
+  enabled:true
+}));
+
+function load(key,fallback){
+  try{
+    let v=JSON.parse(localStorage.getItem(key));
+    return Array.isArray(v)?v:fallback;
+  }catch{
+    return fallback;
+  }
+}
+
+let colors=load('nm_v2_colors',base);
+let favorites=load('nm_v2_favorites',[]);
+let selectedMood=null;
+
+const $=id=>document.getElementById(id);
+
+const save=()=>{
+  localStorage.setItem('nm_v2_colors',JSON.stringify(colors));
+  localStorage.setItem('nm_v2_favorites',JSON.stringify(favorites));
+};
+
+const escapeHTML=s=>String(s).replace(/[&<>"']/g,c=>({
+  '&':'&amp;',
+  '<':'&lt;',
+  '>':'&gt;',
+  '"':'&quot;',
+  "'":'&#39;'
+}[c]));
+
+function card(c){
+  let liked=favorites.includes(c.id);
+  return `
+    <article class="tile">
+      <div class="swatch"
+        style="background:${/^#[0-9a-fA-F]{6}$/.test(c.hex)?c.hex:'#ddd'}">
+      </div>
+      <h3>${escapeHTML(c.name)}</h3>
+      <div class="meta">
+        ${escapeHTML(c.brand)} / ${escapeHTML(c.code)}
+      </div>
+      <span class="tag">${escapeHTML(c.type)}</span>
+      <button class="save ${liked?'saved':''}"
+        data-fav="${escapeHTML(c.id)}">
+        ${liked?'♥ 保存済み':'♡ 保存'}
+      </button>
+    </article>`;
+}
+
+function showGrid(id,items){
+  $(id).innerHTML=items.length
+    ?items.map(card).join('')
+    :'<div class="empty">該当するカラーがありません</div>';
+}
+
+function render(){
+  let active=colors.filter(c=>c.enabled);
+  let brands=[...new Set(active.map(c=>c.brand))].sort();
+  let previous=$('brand').value;
+
+  $('brand').innerHTML=
+    '<option value="">すべてのメーカー</option>'+
+    brands.map(b=>`<option value="${escapeHTML(b)}">${escapeHTML(b)}</option>`).join('');
+
+  $('brand').value=brands.includes(previous)?previous:'';
+
+  let q=$('search').value.trim().toLowerCase();
+  let b=$('brand').value;
+
+  showGrid('colorGrid',active.filter(c=>
+    (!b||c.brand===b)&&
+    [c.brand,c.code,c.name].join(' ').toLowerCase().includes(q)
+  ));
+
+  showGrid('favGrid',colors.filter(c=>favorites.includes(c.id)));
+
+  showGrid('moodGrid',selectedMood
+    ?active.filter(c=>c.mood===selectedMood)
+    :[]);
+
+  $('stockList').innerHTML=colors.map(c=>`
+    <label class="row">
+      <input type="checkbox" data-stock="${escapeHTML(c.id)}"
+        ${c.enabled?'checked':''}>
+      <span>
+        ${escapeHTML(c.brand)} ${escapeHTML(c.code)} /
+        ${escapeHTML(c.name)}
+      </span>
+    </label>
+  `).join('');
+}
+
+document.querySelectorAll('nav button').forEach(btn=>
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('nav button').forEach(b=>
+      b.classList.toggle('active',b===btn)
+    );
+    document.querySelectorAll('main section').forEach(s=>
+      s.classList.toggle('hidden',s.id!==btn.dataset.tab)
+    );
+    render();
+  })
+);
+
+$('search').addEventListener('input',render);
+
+$('brand').addEventListener('change',()=>{
+  let q=$('search').value.trim().toLowerCase();
+  let b=$('brand').value;
+  showGrid('colorGrid',colors.filter(c=>
+    c.enabled&&(!b||c.brand===b)&&
+    [c.brand,c.code,c.name].join(' ').toLowerCase().includes(q)
+  ));
+});
+
+$('recommend').addEventListener('click',()=>{
+  selectedMood=$('moodSelect').value;
+  render();
+});
+
+document.addEventListener('click',e=>{
+  let btn=e.target.closest('[data-fav]');
+  if(!btn)return;
+
+  let id=btn.dataset.fav;
+  favorites=favorites.includes(id)
+    ?favorites.filter(x=>x!==id)
+    :[...favorites,id];
+
+  save();
+  render();
+});
+
+$('stockList').addEventListener('change',e=>{
+  let id=e.target.dataset.stock;
+  if(!id)return;
+
+  let c=colors.find(c=>c.id===id);
+  if(c){
+    c.enabled=e.target.checked;
+    save();
+    render();
+  }
+});
+
+$('add').addEventListener('click',()=>{
+  let brand=$('newBrand').value.trim();
+  let code=$('newCode').value.trim();
+  let name=$('newName').value.trim();
+
+  if(!brand||!code||!name){
+    alert('メーカー・品番・カラー名を入力してください');
+    return;
+  }
+
+  if(colors.some(c=>
+    c.brand.toLowerCase()===brand.toLowerCase()&&
+    c.code.toLowerCase()===code.toLowerCase()
+  )){
+    alert('このメーカーと品番は登録済みです');
+    return;
+  }
+
+  colors.push({
+    id:'custom-'+Date.now(),
+    brand,code,name,
+    type:$('newType').value,
+    hex:$('newHex').value,
+    mood:$('newMood').value,
+    enabled:true
+  });
+
+  save();
+  ['newBrand','newCode','newName'].forEach(id=>$(id).value='');
+  render();
+  alert('登録しました！カラー一覧に表示されます');
+});
+
+$('reset').addEventListener('click',()=>{
+  if(confirm('登録内容とお気に入りを初期化しますか？')){
+    colors=structuredClone(base);
+    favorites=[];
+    selectedMood=null;
+    save();
+    render();
+  }
+});
+
+render();
+</script>
+</body>
+</html>
