@@ -1,0 +1,463 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f6f3">
+
+  <title>NAIL MATCH | Color Curation Studio</title>
+
+  <link rel="stylesheet" href="./v4.css">
+  <script src="./v4.js" defer></script>
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="eyebrow">COLOR CURATION STUDIO</div>
+  <h1>NAIL MATCH <span>✦</span></h1>
+  <p>FIND THE SHADE THAT FEELS LIKE YOU</p>
+</header>
+
+<nav id="nav" class="main-nav">
+  <button class="active" data-page="discover">
+    見つける
+  </button>
+  <button data-page="diagnose">
+    カラー診断
+  </button>
+  <button data-page="favorites">
+    お気に入り
+  </button>
+  <button data-page="compare">
+    比較
+  </button>
+  <button data-page="admin">
+    サロン管理
+  </button>
+</nav>
+
+<main>
+
+  <!-- =================================
+       DISCOVER
+  ================================= -->
+
+  <section id="discover" class="page active">
+
+    <div class="hero">
+      <div class="eyebrow">THE COLOR EDIT</div>
+      <h2>Find your<br>signature shade.</h2>
+      <p>
+        今日の気分にも、あなたの肌にも。<br>
+        サロンで出会う、とっておきの一色。
+      </p>
+
+      <button class="btn primary"
+        data-go="diagnose">
+        似合う色を探す →
+      </button>
+    </div>
+
+    <div class="panel">
+      <div class="eyebrow">CURATED COLORS</div>
+      <h2>Color Library</h2>
+      <p class="sub">
+        あなたらしいネイルカラーを見つけよう。
+      </p>
+
+      <input
+        id="search"
+        class="field"
+        placeholder="メーカー・品番・カラー名で検索">
+
+      <div class="filters">
+        <select id="brand" class="field">
+          <option value="">すべてのメーカー</option>
+        </select>
+
+        <select id="finish" class="field">
+          <option value="">すべての質感</option>
+          <option>ワンカラー</option>
+          <option>シアー</option>
+          <option>マグネット</option>
+          <option>フラッシュ</option>
+          <option>ラメ</option>
+        </select>
+      </div>
+    </div>
+
+    <p id="count" class="sub"></p>
+    <div id="catalog" class="color-grid"></div>
+
+  </section>
+
+  <!-- =================================
+       PERSONAL COLOR DIAGNOSIS
+  ================================= -->
+
+  <section id="diagnose" class="page">
+
+    <div class="panel">
+      <div class="eyebrow">PERSONAL COLOR EDIT</div>
+      <h2>Your shade, your mood.</h2>
+
+      <p class="sub">
+        肌の印象・気分・シーンから
+        おすすめカラーを提案します。
+      </p>
+
+      <label for="tone">肌の印象</label>
+      <select id="tone" class="field">
+        <option value="any">わからない</option>
+        <option value="warm">黄み寄り</option>
+        <option value="cool">青み寄り</option>
+        <option value="neutral">
+          ニュートラル
+        </option>
+      </select>
+
+      <label for="mood">今日の気分</label>
+      <select id="mood" class="field">
+        <option value="natural">
+          ナチュラル・かわいい
+        </option>
+        <option value="elegant">
+          上品・きれいめ
+        </option>
+        <option value="sparkle">
+          華やか・キラキラ
+        </option>
+        <option value="mode">
+          モード・大人っぽい
+        </option>
+      </select>
+
+      <label for="scene">利用シーン</label>
+      <select id="scene" class="field">
+        <option value="daily">普段使い</option>
+        <option value="office">オフィス</option>
+        <option value="event">
+          お出かけ・イベント
+        </option>
+      </select>
+
+      <button id="diagnoseBtn"
+        class="btn primary">
+        おすすめカラーを表示 ✦
+      </button>
+
+      <div id="diagnoseInfo"
+        class="result hidden"></div>
+    </div>
+
+    <div id="recommendations"
+      class="color-grid"></div>
+
+  </section>
+
+  <!-- =================================
+       FAVORITES
+  ================================= -->
+
+  <section id="favorites" class="page">
+
+    <div class="panel">
+      <div class="eyebrow">YOUR COLLECTION</div>
+      <h2>My Favorites ♡</h2>
+      <p class="sub">
+        気になるカラーを保存して、
+        あとから比較できます。
+      </p>
+    </div>
+
+    <div id="favGrid" class="color-grid"></div>
+
+  </section>
+
+  <!-- =================================
+       COMPARISON
+  ================================= -->
+
+  <section id="compare" class="page">
+
+    <div class="panel">
+      <div class="eyebrow">SHADE COMPARISON</div>
+      <h2>Compare Colors</h2>
+      <p class="sub">
+        気になる2色を並べて比較。
+      </p>
+
+      <button id="clearCompare"
+        class="btn outline">
+        比較をクリア
+      </button>
+    </div>
+
+    <div id="compareGrid"
+      class="compare-grid"></div>
+
+  </section>
+
+  <!-- =================================
+       SALON MANAGEMENT
+  ================================= -->
+
+  <section id="admin" class="page">
+
+    <div class="panel">
+      <div class="eyebrow">SALON STUDIO</div>
+      <h2>Salon Color Manager</h2>
+
+      <p class="sub">
+        サロンの取り扱いカラーを管理。
+      </p>
+
+      <div id="stockCount" class="result"></div>
+      <div id="stockList"></div>
+    </div>
+
+    <!-- AI / OCR SCAN -->
+
+    <div class="panel">
+      <div class="eyebrow">SMART GEL SCAN</div>
+      <h2>Scan Your Gel ✦</h2>
+
+      <p class="sub">
+        ジェル容器のラベルを撮影すると、
+        メーカー名と品番の候補を読み取ります。
+      </p>
+
+      <div class="scan-box">
+        <div class="scan-icon">◎</div>
+        <strong>ジェル容器を撮影</strong>
+        <p class="sub">
+          メーカー名と品番が見えるように
+          撮影してください。
+        </p>
+
+        <label for="scanPhoto"
+          class="btn primary">
+          写真を撮影・選択する
+        </label>
+
+        <input
+          id="scanPhoto"
+          type="file"
+          accept="image/*"
+          capture="environment"
+          class="hidden">
+      </div>
+
+      <div id="scanPreview"></div>
+      <div id="scanStatus" class="sub"></div>
+      <div id="scanResults"></div>
+
+      <p class="small">
+        ※読み取り結果は必ず確認してください。
+        OCRによる誤認識が発生する場合があります。
+      </p>
+    </div>
+
+    <!-- GEL REGISTRATION -->
+
+    <div class="panel">
+      <div class="eyebrow">COLOR REGISTRATION</div>
+      <h2 id="formTitle">Add New Gel ♡</h2>
+
+      <form id="gelForm">
+
+        <label for="gelBrandSelect">
+          メーカーを選択
+        </label>
+
+        <select id="gelBrandSelect"
+          class="field">
+          <option value="">
+            メーカーを選択してください
+          </option>
+          <option value="__new__">
+            ＋ 新しいメーカーを追加
+          </option>
+        </select>
+
+        <div id="newBrandArea" class="hidden">
+          <label for="gelBrand">
+            新しいメーカー名
+          </label>
+          <input id="gelBrand"
+            class="field"
+            placeholder="メーカー名を入力">
+        </div>
+
+        <label for="gelCodeSelect">
+          品番を選択
+        </label>
+
+        <select id="gelCodeSelect"
+          class="field">
+          <option value="">
+            品番を選択してください
+          </option>
+          <option value="__new__">
+            ＋ 新しい品番を追加
+          </option>
+        </select>
+
+        <div id="newCodeArea" class="hidden">
+          <label for="gelCode">
+            新しい品番
+          </label>
+          <input id="gelCode"
+            class="field"
+            placeholder="例：M03">
+        </div>
+
+        <label for="gelName">
+          カラー名
+        </label>
+        <input id="gelName"
+          class="field"
+          placeholder="例：シャンパンピンク">
+
+        <label for="gelFinish">
+          ジェルの種類
+        </label>
+
+        <select id="gelFinish" class="field">
+          <option>ワンカラー</option>
+          <option>シアー</option>
+          <option>マグネット</option>
+          <option>フラッシュ</option>
+          <option>ラメ</option>
+        </select>
+
+        <label for="gelHex">
+          カラー見本
+        </label>
+
+        <input id="gelHex"
+          type="color"
+          value="#d6a9b6"
+          class="field color-input">
+
+        <label for="gelTone">
+          肌トーンの参考タグ
+        </label>
+
+        <select id="gelTone" class="field">
+          <option value="neutral">
+            ニュートラル
+          </option>
+          <option value="warm">黄み寄り</option>
+          <option value="cool">青み寄り</option>
+        </select>
+
+        <label for="gelMood">
+          おすすめムード
+        </label>
+
+        <select id="gelMood" class="field">
+          <option value="natural">
+            ナチュラル
+          </option>
+          <option value="elegant">上品</option>
+          <option value="sparkle">華やか</option>
+          <option value="mode">モード</option>
+        </select>
+
+        <label for="gelPhoto">
+          施術写真・カラーチャート写真
+        </label>
+
+        <input id="gelPhoto"
+          type="file"
+          accept="image/*"
+          class="field">
+
+        <div id="photoPreview"></div>
+
+        <button id="removePhoto"
+          type="button"
+          class="btn outline">
+          写真を削除
+        </button>
+
+        <div class="form-actions">
+          <button id="saveGelBtn"
+            type="submit"
+            class="btn primary">
+            ジェルを登録する ✦
+          </button>
+
+          <button id="cancelEdit"
+            type="button"
+            class="btn outline hidden">
+            編集をキャンセル
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- BACKUP -->
+
+    <div class="panel">
+      <div class="eyebrow">DATA CONTROL</div>
+      <h2>My Salon Data</h2>
+
+      <p class="sub">
+        登録データをバックアップ・復元できます。
+      </p>
+
+      <div class="form-actions">
+        <button id="exportData"
+          class="btn light">
+          データを書き出す
+        </button>
+
+        <button id="importData"
+          class="btn outline">
+          データを復元する
+        </button>
+      </div>
+
+      <input id="importFile"
+        type="file"
+        accept=".json,application/json"
+        class="hidden">
+
+      <button id="resetData"
+        class="btn outline danger">
+        サンプルデータに戻す
+      </button>
+
+      <p class="small">
+        ※デモ版ではデータはこのブラウザ内に保存されます。
+        別の端末とは自動同期されません。
+      </p>
+    </div>
+
+  </section>
+
+</main>
+
+<dialog id="detail">
+  <div class="modal">
+    <div id="detailBody"></div>
+
+    <button id="closeDetail"
+      class="btn outline">
+      閉じる
+    </button>
+  </div>
+</dialog>
+
+<footer>
+  NAIL MATCH · COLOR CURATION STUDIO · v4
+</footer>
+
+</body>
+</html>
