@@ -1,0 +1,198 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NAIL MATCH</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#faf6f5;color:#352b31;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+header{background:#fff;padding:24px 18px;text-align:center;border-bottom:1px solid #eee}
+h1{margin:0;font-size:27px;letter-spacing:4px}
+small{color:#9b7e8e}
+nav{display:flex;background:white;position:sticky;top:0;z-index:2;border-bottom:1px solid #eee}
+nav button{flex:1;border:0;background:white;padding:15px 4px;font-size:13px;color:#777}
+nav button.active{color:#b26b90;border-bottom:3px solid #b26b90;font-weight:bold}
+main{max-width:650px;margin:auto;padding:18px}
+section{display:none}
+section.active{display:block}
+.panel{background:white;border-radius:18px;padding:18px;margin-bottom:16px;box-shadow:0 3px 14px #00000008}
+h2{font-size:19px;margin:0 0 12px}
+p{line-height:1.6}
+input,select{width:100%;padding:13px;margin:7px 0;border:1px solid #e6dce1;border-radius:10px;font-size:16px;background:white}
+button{cursor:pointer}
+.primary{background:#b26b90;color:white;border:0;border-radius:12px;padding:13px 18px;font-weight:bold}
+.colors{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.color{background:white;border-radius:15px;padding:12px;box-shadow:0 2px 10px #00000009}
+.swatch{height:90px;border-radius:12px;margin-bottom:10px}
+.name{font-weight:bold;font-size:14px}
+.meta{font-size:12px;color:#888;margin:5px 0}
+.actions{display:flex;gap:6px;margin-top:9px}
+.actions button{flex:1;padding:9px 4px;border:1px solid #e6dce1;border-radius:9px;background:#fff;font-size:12px}
+.actions button.chosen{background:#f9e4ef;color:#a04477}
+.tag{display:inline-block;background:#f7e7ee;border-radius:20px;padding:5px 10px;font-size:12px;color:#a04f79}
+.empty{text-align:center;color:#888;padding:20px}
+footer{text-align:center;color:#aaa;font-size:11px;padding:20px}
+</style>
+</head>
+<body>
+<header>
+<h1>NAIL MATCH ✦</h1>
+<small>FIND YOUR PERFECT COLOR</small>
+</header>
+<nav>
+<button class="active" onclick="tab('discover',this)">カラー</button>
+<button onclick="tab('match',this)">ムード診断</button>
+<button onclick="tab('favorites',this)">お気に入り</button>
+<button onclick="tab('salon',this)">サロン管理</button>
+</nav>
+<main>
+<section id="discover" class="active">
+<div class="panel">
+<h2>あなたの好きな色を見つけよう ✨</h2>
+<p>サロンにあるカラーから、お気に入りを探してみてね。</p>
+<input id="search" placeholder="メーカー・品番・色名で検索" oninput="render()">
+<select id="brand" onchange="render()">
+<option value="">すべてのメーカー</option>
+<option>Ricca</option>
+<option>PREGEL</option>
+<option>my&bee</option>
+<option>emena</option>
+<option>その他</option>
+</select>
+</div>
+<div id="catalog" class="colors"></div>
+</section>
+<section id="match">
+<div class="panel">
+<h2>AI MOOD MATCH ✨</h2>
+<p>今日の気分から、似合いそうなカラーを探そう。</p>
+<select id="mood">
+<option value="office">上品・オフィス</option>
+<option value="cute">かわいい・ナチュラル</option>
+<option value="glam">華やか・キラキラ</option>
+<option value="cool">大人っぽい・クール</option>
+</select>
+<button class="primary" onclick="recommend()">おすすめを見る ✦</button>
+</div>
+<div id="results" class="colors"></div>
+</section>
+<section id="favorites">
+<div class="panel"><h2>MY COLORS ♡</h2><p>お気に入りにしたカラーを保存しておけるよ。</p></div>
+<div id="saved" class="colors"></div>
+</section>
+<section id="salon">
+<div class="panel">
+<h2>サロン管理</h2>
+<p>共通マスタから取り扱いカラーを登録。</p>
+<div id="inventory"></div>
+</div>
+<div class="panel">
+<h2>新しいジェルを追加</h2>
+<input id="newbrand" placeholder="メーカー名">
+<input id="newcode" placeholder="品番">
+<input id="newname" placeholder="カラー名">
+<select id="newtype">
+<option value="one">通常カラー</option>
+<option value="mag">マグネット</option>
+<option value="flash">フラッシュ</option>
+</select>
+<input id="newcolor" type="color" value="#cfa1b1">
+<button class="primary" onclick="addColor()">マスタに仮登録する</button>
+</div>
+</section>
+</main>
+<footer>NAIL MATCH DEMO · 架空のサンプルデータを使用</footer>
+<script>
+const initial=[
+{id:1,brand:"Ricca",code:"R01",name:"ローズベージュ",hex:"#c48d91",type:"one",moods:["office","cute"]},
+{id:2,brand:"Ricca",code:"R02",name:"ミルクピンク",hex:"#e9bfc7",type:"one",moods:["cute","office"]},
+{id:3,brand:"PREGEL",code:"P01",name:"モーヴグレージュ",hex:"#a38c99",type:"one",moods:["cool","office"]},
+{id:4,brand:"PREGEL",code:"P02",name:"シアーラベンダー",hex:"#c7b4d7",type:"one",moods:["cute","cool"]},
+{id:5,brand:"my&bee",code:"M01",name:"シャンパンマグ",hex:"#c8ab91",type:"mag",moods:["glam","office"]},
+{id:6,brand:"my&bee",code:"M02",name:"ピンクマグ",hex:"#c994a8",type:"mag",moods:["cute","glam"]},
+{id:7,brand:"emena",code:"E01",name:"フラッシュローズ",hex:"#b86d86",type:"flash",moods:["glam","cute"]},
+{id:8,brand:"emena",code:"E02",name:"ボルドーマグ",hex:"#793e55",type:"mag",moods:["cool","glam"]}
+];
+function load(key,fallback){
+try{const v=JSON.parse(localStorage.getItem(key));return v===null?fallback:v}catch(e){return fallback}
+}
+let colors=load("nm_colors",initial);
+let favorites=load("nm_favorites",[]);
+let inventory=load("nm_inventory",initial.map(c=>c.id));
+function save(){
+try{
+localStorage.setItem("nm_colors",JSON.stringify(colors));
+localStorage.setItem("nm_favorites",JSON.stringify(favorites));
+localStorage.setItem("nm_inventory",JSON.stringify(inventory))
+}catch(e){}
+}
+function tab(id,btn){
+document.querySelectorAll("section").forEach(s=>s.classList.toggle("active",s.id===id));
+document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+btn.classList.add("active");
+render()
+}
+function card(c){
+const liked=favorites.includes(c.id);
+return `<div class="color">
+<div class="swatch" style="background:${c.hex}"></div>
+<div class="name">${escapeHTML(c.name)}</div>
+<div class="meta">${escapeHTML(c.brand)} / ${escapeHTML(c.code)}</div>
+<span class="tag">${c.type==="mag"?"マグネット":c.type==="flash"?"フラッシュ":"ワンカラー"}</span>
+<div class="actions">
+<button class="${liked?"chosen":""}" onclick="favorite(${c.id})">${liked?"♥ 保存済み":"♡ 保存"}</button>
+</div></div>`
+}
+function escapeHTML(s){
+return String(s).replace(/[&<>"']/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]))
+}
+function render(){
+const q=document.getElementById("search").value.toLowerCase();
+const b=document.getElementById("brand").value;
+const available=colors.filter(c=>inventory.includes(c.id));
+const found=available.filter(c=>(!b||c.brand===b)&&[c.brand,c.code,c.name].join(" ").toLowerCase().includes(q));
+document.getElementById("catalog").innerHTML=found.map(card).join("")||'<div class="empty">カラーがありません</div>';
+document.getElementById("saved").innerHTML=available.filter(c=>favorites.includes(c.id)).map(card).join("")||'<div class="empty">まだお気に入りがありません</div>';
+document.getElementById("inventory").innerHTML=colors.map(c=>`<label style="display:block;padding:9px;border-bottom:1px solid #eee"><input style="width:auto;margin-right:9px" type="checkbox" ${inventory.includes(c.id)?"checked":""} onchange="toggleStock(${c.id})">${escapeHTML(c.brand)} ${escapeHTML(c.code)} / ${escapeHTML(c.name)}</label>`).join("");
+}
+function favorite(id){
+favorites=favorites.includes(id)?favorites.filter(x=>x!==id):[...favorites,id];
+save();render();
+const result=document.getElementById("results");
+if(result.dataset.mood)recommend()
+}
+function toggleStock(id){
+inventory=inventory.includes(id)?inventory.filter(x=>x!==id):[...inventory,id];
+save();render()
+}
+function recommend(){
+const mood=document.getElementById("mood").value;
+const found=colors.filter(c=>inventory.includes(c.id)&&c.moods.includes(mood));
+const el=document.getElementById("results");
+el.dataset.mood=mood;
+el.innerHTML=found.slice(0,4).map(card).join("")||'<div class="empty">候補がありません</div>'
+}
+function addColor(){
+const brand=document.getElementById("newbrand").value.trim();
+const code=document.getElementById("newcode").value.trim();
+const name=document.getElementById("newname").value.trim();
+if(!brand||!code||!name){alert("メーカー・品番・カラー名を入力してください");return}
+if(colors.some(c=>c.brand.toLowerCase()===brand.toLowerCase()&&c.code.toLowerCase()===code.toLowerCase())){
+alert("同じメーカー・品番がすでに登録されています");return
+}
+const type=document.getElementById("newtype").value;
+const hex=document.getElementById("newcolor").value;
+const id=Math.max(0,...colors.map(c=>c.id))+1;
+colors.push({id,brand,code,name,hex,type,moods:type==="one"?["office","cute","cool"]:["glam","cute"]});
+inventory.push(id);save();render();
+document.getElementById("newbrand").value="";
+document.getElementById("newcode").value="";
+document.getElementById("newname").value="";
+alert("仮登録しました！カラー一覧にも表示されます")
+}
+render();
+</script>
+</body>
+</html>
