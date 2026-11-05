@@ -1171,4 +1171,880 @@ renderCatalog();
 // PART 3 CONTINUES BELOW
 // =====================================
 
+// =====================================
+// NAIL MATCH v3
+// PART 3 / SALON MANAGEMENT
+// =====================================
+
+const ADMIN_KEY = "nailmatch_v3_admin_settings";
+let editingColorId = null;
+let pendingPhoto = "";
+
+// -------------------------------------
+// 管理画面のHTMLを作成
+// -------------------------------------
+
+function setupAdminPanel() {
+  const admin = document.getElementById("admin");
+
+  if (!admin) {
+    console.error("Admin section not found");
+    return;
+  }
+
+  admin.innerHTML = `
+    <div class="panel">
+      <div class="eyebrow">SALON STUDIO ✦</div>
+      <h2>Salon Color Management</h2>
+      <p class="small">
+        サロンの取り扱いカラーを自由に管理できます。
+      </p>
+
+      <div class="result">
+        <strong id="stockCount">0 COLORS</strong>
+        <p class="small">
+          チェックを切り替えると、お客様向けの
+          カラー一覧・診断結果にも反映されます。
+        </p>
+      </div>
+
+      <div id="stockList"></div>
+    </div>
+
+    <div class="panel">
+      <div class="eyebrow">COLOR LIBRARY</div>
+      <h2 id="formTitle">Add New Gel ♡</h2>
+      <p class="small">
+        新しいジェルカラーを登録できます。
+      </p>
+
+      <form id="gelForm">
+        <label class="small">メーカー名</label>
+        <input id="gelBrand"
+          placeholder="例：my&bee" required>
+
+        <label class="small">品番</label>
+        <input id="gelCode"
+          placeholder="例：M03" required>
+
+        <label class="small">カラー名</label>
+        <input id="gelName"
+          placeholder="例：シアーピンク" required>
+
+        <label class="small">ジェルの種類</label>
+        <select id="gelFinish">
+          <option>ワンカラー</option>
+          <option>シアー</option>
+          <option>マグネット</option>
+          <option>フラッシュ</option>
+          <option>ラメ</option>
+        </select>
+
+        <label class="small">参考カラー</label>
+        <input id="gelHex"
+          type="color" value="#d6a9b6"
+          style="height:55px;padding:5px">
+
+        <label class="small">カラーの傾向</label>
+        <select id="gelTone">
+          <option value="neutral">
+            ニュートラル
+          </option>
+          <option value="warm">
+            黄み寄り
+          </option>
+          <option value="cool">
+            青み寄り
+          </option>
+        </select>
+
+        <label class="small">おすすめムード</label>
+        <select id="gelMood">
+          <option value="natural">ナチュラル</option>
+          <option value="elegant">上品</option>
+          <option value="sparkle">華やか</option>
+          <option value="mode">モード</option>
+        </select>
+
+        <label class="small">
+          施術写真・カラーチャート写真
+        </label>
+
+        <input id="gelPhoto"
+          type="file"
+          accept="image/jpeg,image/png,image/webp">
+
+        <p class="small">
+          写真は端末内に保存されます。
+          容量節約のため自動縮小します。
+        </p>
+
+        <div id="photoPreview"
+          style="margin:12px 0"></div>
+
+        <button type="button"
+          id="removePhoto"
+          class="btn outline">
+          写真を削除
+        </button>
+
+        <div style="height:15px"></div>
+
+        <button type="submit"
+          class="btn primary"
+          id="saveGelBtn">
+          ジェルを登録する ✦
+        </button>
+
+        <button type="button"
+          id="cancelEdit"
+          class="btn outline hidden">
+          編集をキャンセル
+        </button>
+      </form>
+    </div>
+
+    <div class="panel">
+      <div class="eyebrow">DATA CONTROL</div>
+      <h2>My Salon Data</h2>
+      <p class="small">
+        登録したカラー情報をバックアップできます。
+      </p>
+
+      <div class="bar">
+        <button id="exportData"
+          class="btn light">
+          データを書き出す
+        </button>
+
+        <button id="importData"
+          class="btn outline">
+          データを復元する
+        </button>
+      </div>
+
+      <input id="importFile"
+        type="file"
+        accept=".json,application/json"
+        class="hidden">
+
+      <div style="height:20px"></div>
+
+      <button id="resetData"
+        class="btn outline">
+        サンプルデータに戻す
+      </button>
+
+      <p class="small">
+        ※このデモのデータはブラウザ内に保存されます。
+        別の端末とは自動同期されません。
+      </p>
+    </div>
+  `;
+
+  bindAdminEvents();
+  renderStockList();
+}
+
+// -------------------------------------
+// 在庫・取り扱い一覧
+// -------------------------------------
+
+function renderStockList() {
+  const list = document.getElementById("stockList");
+  const count = document.getElementById("stockCount");
+
+  if (!list || !count) return;
+
+  const activeCount = availableColors().length;
+
+  count.textContent =
+    `${activeCount} / ${colors.length} COLORS AVAILABLE`;
+
+  list.innerHTML = colors.map(c => `
+    <div class="stock-row"
+      style="
+        display:flex;
+        align-items:center;
+        gap:10px;
+        padding:13px 0;
+        border-bottom:1px solid #eee;
+      ">
+
+      <input type="checkbox"
+        data-stock="${escapeHTML(c.id)}"
+        ${c.available !== false ? "checked" : ""}
+        style="width:22px;height:22px;flex-shrink:0">
+
+      <div style="
+        width:35px;
+        height:35px;
+        border-radius:10px;
+        background:${safeHex(c.hex)};
+        flex-shrink:0;
+      "></div>
+
+      <div style="flex:1;min-width:0">
+        <strong style="font-size:13px">
+          ${escapeHTML(c.name)}
+        </strong>
+        <div class="small">
+          ${escapeHTML(c.brand)} /
+          ${escapeHTML(c.code)}
+        </div>
+      </div>
+
+      <button class="btn outline"
+        data-admin-action="edit"
+        data-id="${escapeHTML(c.id)}"
+        style="padding:8px;font-size:12px">
+        編集
+      </button>
+
+      <button class="btn outline"
+        data-admin-action="delete"
+        data-id="${escapeHTML(c.id)}"
+        style="padding:8px;font-size:12px">
+        削除
+      </button>
+    </div>
+  `).join("");
+}
+
+// -------------------------------------
+// 写真の縮小・圧縮
+// -------------------------------------
+
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith("image/")) {
+      reject(new Error("画像ファイルを選択してください"));
+      return;
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      reject(new Error("15MB以下の画像を選択してください"));
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onerror = () => reject(
+      new Error("画像を読み込めませんでした")
+    );
+
+    reader.onload = () => {
+      const img = new Image();
+
+      img.onerror = () => reject(
+        new Error("画像形式を確認してください")
+      );
+
+      img.onload = () => {
+        const maxSize = 750;
+        const scale = Math.min(
+          1,
+          maxSize / Math.max(img.width, img.height)
+        );
+
+        const canvas = document.createElement("canvas");
+
+        canvas.width = Math.max(
+          1,
+          Math.round(img.width * scale)
+        );
+
+        canvas.height = Math.max(
+          1,
+          Math.round(img.height * scale)
+        );
+
+        const ctx = canvas.getContext("2d");
+
+        if (!ctx) {
+          reject(new Error("画像を処理できません"));
+          return;
+        }
+
+        ctx.drawImage(
+          img, 0, 0,
+          canvas.width, canvas.height
+        );
+
+        resolve(
+          canvas.toDataURL("image/jpeg", 0.68)
+        );
+      };
+
+      img.src = reader.result;
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderPhotoPreview() {
+  const preview = document.getElementById("photoPreview");
+
+  if (!preview) return;
+
+  if (pendingPhoto) {
+    preview.innerHTML = `
+      <img src="${pendingPhoto}"
+        alt="登録写真"
+        style="
+          width:100%;
+          max-height:220px;
+          object-fit:cover;
+          border-radius:16px;
+        ">
+    `;
+  } else {
+    preview.innerHTML = `
+      <div class="empty">
+        写真はまだ登録されていません
+      </div>
+    `;
+  }
+}
+
+// -------------------------------------
+// フォーム入力
+// -------------------------------------
+
+function getGelFormData() {
+  return {
+    brand: document.getElementById("gelBrand")
+      .value.trim(),
+    code: document.getElementById("gelCode")
+      .value.trim(),
+    name: document.getElementById("gelName")
+      .value.trim(),
+    finish: document.getElementById("gelFinish")
+      .value,
+    hex: document.getElementById("gelHex")
+      .value,
+    tone: document.getElementById("gelTone")
+      .value,
+    mood: document.getElementById("gelMood")
+      .value,
+    photo: pendingPhoto
+  };
+}
+
+function resetGelForm() {
+  editingColorId = null;
+  pendingPhoto = "";
+
+  document.getElementById("gelForm").reset();
+
+  document.getElementById("gelHex").value =
+    "#d6a9b6";
+
+  document.getElementById("formTitle")
+    .textContent = "Add New Gel ♡";
+
+  document.getElementById("saveGelBtn")
+    .textContent = "ジェルを登録する ✦";
+
+  document.getElementById("cancelEdit")
+    .classList.add("hidden");
+
+  renderPhotoPreview();
+}
+
+// -------------------------------------
+// 新規登録・更新
+// -------------------------------------
+
+function submitGel(event) {
+  event.preventDefault();
+
+  const data = getGelFormData();
+
+  if (!data.brand || !data.code || !data.name) {
+    alert("メーカー・品番・カラー名を入力してください");
+    return;
+  }
+
+  const duplicate = colors.find(c =>
+    c.brand.toLowerCase() === data.brand.toLowerCase() &&
+    c.code.toLowerCase() === data.code.toLowerCase() &&
+    c.id !== editingColorId
+  );
+
+  if (duplicate) {
+    alert("同じメーカー・品番が登録されています");
+    return;
+  }
+
+  const previousColors = colors.map(c => ({ ...c }));
+
+  if (editingColorId) {
+    const index = colors.findIndex(
+      c => c.id === editingColorId
+    );
+
+    if (index === -1) {
+      alert("編集対象が見つかりません");
+      return;
+    }
+
+    colors[index] = {
+      ...colors[index],
+      ...data
+    };
+  } else {
+    const newId =
+      "gel-" + Date.now() + "-" +
+      Math.random().toString(36).slice(2, 8);
+
+    colors.push({
+      id: newId,
+      ...data,
+      available: true
+    });
+  }
+
+  if (!saveColors()) {
+    colors = previousColors;
+    return;
+  }
+
+  resetGelForm();
+  refreshViews();
+  renderStockList();
+
+  alert("カラー情報を保存しました ♡");
+}
+
+// -------------------------------------
+// 編集
+// -------------------------------------
+
+function editGel(id) {
+  const c = byId(id);
+  if (!c) return;
+
+  editingColorId = id;
+  pendingPhoto = c.photo || "";
+
+  document.getElementById("gelBrand").value =
+    c.brand;
+
+  document.getElementById("gelCode").value =
+    c.code;
+
+  document.getElementById("gelName").value =
+    c.name;
+
+  document.getElementById("gelFinish").value =
+    c.finish;
+
+  document.getElementById("gelHex").value =
+    safeHex(c.hex);
+
+  document.getElementById("gelTone").value =
+    c.tone || "neutral";
+
+  document.getElementById("gelMood").value =
+    c.mood || "natural";
+
+  document.getElementById("formTitle")
+    .textContent = "Edit Gel Color ✦";
+
+  document.getElementById("saveGelBtn")
+    .textContent = "変更を保存する";
+
+  document.getElementById("cancelEdit")
+    .classList.remove("hidden");
+
+  renderPhotoPreview();
+
+  document.getElementById("gelForm")
+    .scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+}
+
+// -------------------------------------
+// 削除
+// -------------------------------------
+
+function deleteGel(id) {
+  const c = byId(id);
+  if (!c) return;
+
+  if (!confirm(
+    `${c.name} を削除しますか？\nこの操作は取り消せません。`
+  )) {
+    return;
+  }
+
+  const previousColors = colors;
+
+  colors = colors.filter(c => c.id !== id);
+
+  if (!saveColors()) {
+    colors = previousColors;
+    return;
+  }
+
+  favorites = favorites.filter(x => x !== id);
+  comparison = comparison.filter(x => x !== id);
+
+  if (diagnosisResults) {
+    diagnosisResults = diagnosisResults.filter(
+      x => x !== id
+    );
+  }
+
+  saveFavorites();
+
+  if (editingColorId === id) {
+    resetGelForm();
+  }
+
+  refreshViews();
+  renderStockList();
+}
+
+// -------------------------------------
+// 取り扱いON / OFF
+// -------------------------------------
+
+function toggleStock(id, available) {
+  const c = byId(id);
+  if (!c) return;
+
+  const previous = c.available;
+  c.available = available;
+
+  if (!saveColors()) {
+    c.available = previous;
+    renderStockList();
+    return;
+  }
+
+  refreshViews();
+  renderStockList();
+}
+
+// -------------------------------------
+// バックアップ
+// -------------------------------------
+
+function exportSalonData() {
+  const backup = {
+    app: "NAIL MATCH",
+    version: 3,
+    exportedAt: new Date().toISOString(),
+    colors,
+    favorites
+  };
+
+  const blob = new Blob(
+    [JSON.stringify(backup, null, 2)],
+    { type: "application/json" }
+  );
+
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+
+  link.download =
+    "nailmatch-backup-" +
+    new Date().toISOString().slice(0, 10) +
+    ".json";
+
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 1000);
+}
+
+// -------------------------------------
+// バックアップの検証・復元
+// -------------------------------------
+
+function validateBackup(data) {
+  if (!data || data.app !== "NAIL MATCH") {
+    throw new Error("NAIL MATCHのデータではありません");
+  }
+
+  if (!Array.isArray(data.colors)) {
+    throw new Error("カラー情報がありません");
+  }
+
+  if (data.colors.length > 2000) {
+    throw new Error("登録件数が多すぎます");
+  }
+
+  const allowedFinishes = [
+    "ワンカラー",
+    "シアー",
+    "マグネット",
+    "フラッシュ",
+    "ラメ"
+  ];
+
+  const allowedTones = [
+    "warm", "cool", "neutral"
+  ];
+
+  const allowedMoods = [
+    "natural", "elegant", "sparkle", "mode"
+  ];
+
+  const ids = new Set();
+
+  const cleanColors = data.colors.map(c => {
+    if (
+      !c ||
+      typeof c.id !== "string" ||
+      typeof c.brand !== "string" ||
+      typeof c.code !== "string" ||
+      typeof c.name !== "string"
+    ) {
+      throw new Error("カラー情報の形式が不正です");
+    }
+
+    if (
+      !c.id || !c.brand.trim() ||
+      !c.code.trim() || !c.name.trim() ||
+      c.id.length > 120 ||
+      c.brand.length > 100 ||
+      c.code.length > 100 ||
+      c.name.length > 150
+    ) {
+      throw new Error("カラー情報に不正な値があります");
+    }
+
+    if (ids.has(c.id)) {
+      throw new Error("重複したカラーIDがあります");
+    }
+
+    ids.add(c.id);
+
+    const photo =
+      typeof c.photo === "string" &&
+      c.photo.length < 1500000 &&
+      /^data:image\/(png|jpeg|webp|gif);base64,/i
+        .test(c.photo)
+        ? c.photo
+        : "";
+
+    return {
+      id: c.id,
+      brand: c.brand,
+      code: c.code,
+      name: c.name,
+      finish: allowedFinishes.includes(c.finish)
+        ? c.finish : "ワンカラー",
+      hex: safeHex(c.hex),
+      tone: allowedTones.includes(c.tone)
+        ? c.tone : "neutral",
+      mood: allowedMoods.includes(c.mood)
+        ? c.mood : "natural",
+      photo,
+      available: c.available !== false
+    };
+  });
+
+  const cleanFavorites = Array.isArray(data.favorites)
+    ? [...new Set(data.favorites)].filter(
+        id => ids.has(id)
+      )
+    : [];
+
+  return {
+    colors: cleanColors,
+    favorites: cleanFavorites
+  };
+}
+
+async function importSalonData(file) {
+  if (!file) return;
+
+  if (file.size > 20 * 1024 * 1024) {
+    alert("20MB以下のバックアップを選択してください");
+    return;
+  }
+
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    const clean = validateBackup(data);
+
+    if (!confirm(
+      "現在の登録データをバックアップ内容で置き換えますか？"
+    )) {
+      return;
+    }
+
+    const previousColors = colors;
+    const previousFavorites = favorites;
+
+    colors = clean.colors;
+    favorites = clean.favorites;
+
+    if (!saveColors()) {
+      colors = previousColors;
+      favorites = previousFavorites;
+      return;
+    }
+
+    saveFavorites();
+
+    comparison = [];
+    diagnosisResults = null;
+
+    resetGelForm();
+    refreshViews();
+    renderStockList();
+
+    alert("バックアップを復元しました ♡");
+
+  } catch (error) {
+    alert("復元できませんでした：" + error.message);
+  }
+}
+
+// -------------------------------------
+// 初期化
+// -------------------------------------
+
+function resetSalonData() {
+  if (!confirm(
+    "すべての登録カラーをサンプルデータに戻しますか？"
+  )) {
+    return;
+  }
+
+  if (!confirm(
+    "登録写真・追加カラー・お気に入りも消えます。実行しますか？"
+  )) {
+    return;
+  }
+
+  const previousColors = colors;
+  const previousFavorites = favorites;
+
+  colors = sampleColors.map(c => ({ ...c }));
+  favorites = [];
+
+  if (!saveColors()) {
+    colors = previousColors;
+    favorites = previousFavorites;
+    return;
+  }
+
+  saveFavorites();
+
+  comparison = [];
+  diagnosisResults = null;
+
+  resetGelForm();
+  refreshViews();
+  renderStockList();
+
+  alert("サンプルデータに戻しました");
+}
+
+// -------------------------------------
+// イベント登録
+// -------------------------------------
+
+function bindAdminEvents() {
+  document.getElementById("gelForm")
+    .addEventListener("submit", submitGel);
+
+  document.getElementById("cancelEdit")
+    .addEventListener("click", resetGelForm);
+
+  document.getElementById("removePhoto")
+    .addEventListener("click", () => {
+      pendingPhoto = "";
+      document.getElementById("gelPhoto").value = "";
+      renderPhotoPreview();
+    });
+
+  document.getElementById("gelPhoto")
+    .addEventListener("change", async event => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      try {
+        pendingPhoto = await compressImage(file);
+        renderPhotoPreview();
+      } catch (error) {
+        alert(error.message);
+      }
+    });
+
+  document.getElementById("stockList")
+    .addEventListener("change", event => {
+      const checkbox = event.target.closest("[data-stock]");
+      if (!checkbox) return;
+
+      toggleStock(
+        checkbox.dataset.stock,
+        checkbox.checked
+      );
+    });
+
+  document.getElementById("stockList")
+    .addEventListener("click", event => {
+      const btn = event.target.closest("[data-admin-action]");
+      if (!btn) return;
+
+      if (btn.dataset.adminAction === "edit") {
+        editGel(btn.dataset.id);
+      }
+
+      if (btn.dataset.adminAction === "delete") {
+        deleteGel(btn.dataset.id);
+      }
+    });
+
+  document.getElementById("exportData")
+    .addEventListener("click", exportSalonData);
+
+  document.getElementById("importData")
+    .addEventListener("click", () => {
+      document.getElementById("importFile").click();
+    });
+
+  document.getElementById("importFile")
+    .addEventListener("change", async event => {
+      const file = event.target.files[0];
+      await importSalonData(file);
+      event.target.value = "";
+    });
+
+  document.getElementById("resetData")
+    .addEventListener("click", resetSalonData);
+}
+
+// -------------------------------------
+// アプリ起動
+// -------------------------------------
+
+setupAdminPanel();
+renderPhotoPreview();
+refreshViews();
+
+// =====================================
+// NAIL MATCH v3 COMPLETE
+// =====================================
+
+</script>
+</body>
+</html>
+
   
